@@ -67,6 +67,16 @@ public class LgDispatcherServlet extends HttpServlet {
             resp.getWriter().write("404 not found");
             return;
         }
+        Object controller = handler.getController();
+        if (controller.getClass().isAnnotationPresent(Security.class)) {
+            String username = req.getParameter("username");
+            Security annotation = controller.getClass().getAnnotation(Security.class);
+            String[] controllerSecurity = annotation.value();
+            if (!hasSecurity(controllerSecurity, username)) {
+                resp.getWriter().write("401 do not have Authorization");
+                return;
+            }
+        }
         Method method = handler.getMethod();
         if (method.isAnnotationPresent(Security.class)) {
             String username = req.getParameter("username");
@@ -113,6 +123,7 @@ public class LgDispatcherServlet extends HttpServlet {
     }
 
     private boolean hasSecurity(String[] securityPerson, String name) {
+        if (ArrayUtils.isEmpty(securityPerson)) return Boolean.TRUE;
         for (int i = 0; i < securityPerson.length; i++) {
             String securityName = securityPerson[i];
             if (name.equals(securityName)) {
